@@ -1,0 +1,21 @@
+[package]
+name = "digimic-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+color-eyre = "0.6.2"
+eframe = "0.22.0"
+egui = "0.22"
+once_cell = "1.17"
+regex = "1.8"
+log = "0.4.20"
+chrono = "0.4.29"
+serialport = "4.2.2"
+mio-serial = "5.0.5"
+mio = "0.8.8"
+crossbeam-channel = "0.5.8"
+winput = "0.2.5"
+egui_extras = {version = "0.22.0", features = ["datepicker"]}
