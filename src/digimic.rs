@@ -1,7 +1,6 @@
 use std::thread::current;
 
 use chrono::Local;
-use color_eyre::owo_colors::OwoColorize;
 use crossbeam_channel::{Receiver, Sender};
 
 use crate::{egui_log, Commands};

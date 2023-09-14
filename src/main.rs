@@ -3,13 +3,17 @@
 use chrono::prelude::*;
 use crossbeam_channel::{Sender, Receiver};
 use eframe::{egui, glow::FALSE};
-use serialport::{SerialPort, SerialPortInfo, SerialPortType, UsbPortInfo, COMPort};
+use serialport::{SerialPort, SerialPortInfo, SerialPortType, UsbPortInfo};
 use std::time::Duration;
 use std::{
     thread,
 };
 use std::io::{Write, BufReader, BufRead};
-use winput::{Vk, Button};
+
+#[cfg(windows)]
+//use winput::{Vk, Button};
+#[cfg(macos)]
+
 use std::str;
 
 mod digimic;
@@ -40,14 +44,14 @@ fn main() -> Result<(), eframe::Error> {
             SerialPortType::UsbPort(info) => info.product.as_ref().map_or(false, |p| p.contains("CH340")),
             _ => false,
         });
-
+    let port = "/dev/tty.usbserial-1130";
     
 
 
     let (gui_sender, serial_recv) = crossbeam_channel::unbounded::<Commands>();
     let (serial_sender, gui_recv) = crossbeam_channel::unbounded::<Commands>();
 
-    let mut serial_port = serialport::new(ch340.unwrap().port_name, 4800)
+    let mut serial_port = serialport::new(port, 4800)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Seven)
         .parity(serialport::Parity::Even).timeout(Duration::from_millis(5))
@@ -85,6 +89,18 @@ impl SerialThread {
             continuous_mode: false,
         }
     }
+    #[cfg(target_os = "windows")]
+    fn string_to_keyboard(outstring: String)  {
+        //outstring.to_string().chars().into_iter().for_each(|char| {
+        //    winput::send(char);
+        //});
+        //winput::send(Vk::Enter);
+    }
+    #[cfg(target_os = "macos")]
+    fn string_to_keyboard(outstring: String)  {
+        log::error!("Cannot type out from DATA signal on this platform");
+    }
+
     pub fn start(&mut self) {
         loop {
             match self.serial_recv.try_recv() {
@@ -106,7 +122,7 @@ impl SerialThread {
             }
 
             match self.serial_port.read(&mut buffer[..]) {
-                Ok(_) => match str::from_utf8(&buffer) {
+                Ok(_) => match std::str::from_utf8(&buffer) {
                     Ok(string) => {
 
                         //self.serial_sender.send(Commands::SerialNumber(serial_number));
@@ -114,10 +130,7 @@ impl SerialThread {
                         if let Ok(size) = string[1..8].parse::<f64>() {
                             self.serial_sender.send(Commands::CurrentReading(size));
                             if !self.continuous_mode {
-                                size.to_string().chars().into_iter().for_each(|char| {
-                                    winput::send(char);
-                                });
-                                winput::send(Vk::Enter);
+                                //self.string_to_keyboard(size);
                             }
                         } else {
                             if !string.contains("ERR") {
