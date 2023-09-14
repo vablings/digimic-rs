@@ -33,12 +33,21 @@ fn main() -> Result<(), eframe::Error> {
         ..Default::default()
     };
 
- 
+    let ch340 = serialport::available_ports()
+        .unwrap()
+        .into_iter()
+        .find(|port| match &port.port_type {
+            SerialPortType::UsbPort(info) => info.product.as_ref().map_or(false, |p| p.contains("CH340")),
+            _ => false,
+        });
+
+    
+
 
     let (gui_sender, serial_recv) = crossbeam_channel::unbounded::<Commands>();
     let (serial_sender, gui_recv) = crossbeam_channel::unbounded::<Commands>();
 
-    let mut serial_port = serialport::new("COM8", 4800)
+    let mut serial_port = serialport::new(ch340.unwrap().port_name, 4800)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Seven)
         .parity(serialport::Parity::Even).timeout(Duration::from_millis(5))
@@ -100,9 +109,6 @@ impl SerialThread {
                 Ok(_) => match str::from_utf8(&buffer) {
                     Ok(string) => {
 
-                        if let Ok(sn) = string[2..string.len()].parse::<i64>() {
-                            log::info!("WOHOO I64 {sn}");
-                        }
                         //self.serial_sender.send(Commands::SerialNumber(serial_number));
                         
                         if let Ok(size) = string[1..8].parse::<f64>() {
