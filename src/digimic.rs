@@ -89,7 +89,7 @@ impl DigimicApp {
 
             ui.horizontal(|ui| { 
                 ui.heading(format!("{:0>7.4}",self.last_reading));
-                ui.checkbox(&mut self.stream_mode, "CI Output").on_hover_text_at_pointer("Continually updates the value displayed. During this mode the DATA key will not output the value to an external program \n WARNING: Experimental Feature")
+                ui.checkbox(&mut self.stream_mode, "CI Output").on_hover_text_at_pointer("Continually updates the value displayed. During this mode the DATA key will not output the value to an external program \n WARNING: Experimental Featuree")
             });
 
             let response = ui.add(

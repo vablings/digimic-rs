@@ -134,3 +134,54 @@ impl SerialThread {
     }
 }
 
+/*
+
+use serialport;
+use serialport::SerialPortType;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::time::Duration;
+
+fn main() {
+    let ch340 = serialport::available_ports()
+        .unwrap()
+        .into_iter()
+        .find(|port| match &port.port_type {
+            SerialPortType::UsbPort(info) => {
+                info.product.as_ref().map_or(false, |p| p.contains("CH340"))
+            }
+            _ => false,
+        });
+
+    let mut serial_port = serialport::new(ch340.unwrap().port_name, 4800)
+        .stop_bits(serialport::StopBits::One)
+        .data_bits(serialport::DataBits::Seven)
+        .parity(serialport::Parity::Even)
+        .timeout(Duration::from_millis(5))
+        .open()
+        .unwrap();
+
+    let mut reader = BufReader::new(serial_port);   
+
+    loop {
+        reader.get_mut().write("?\r".as_bytes());
+        reader.get_mut().flush();
+
+        let mut buffer = Vec::new();
+        reader.read_until(b'd', &mut buffer);
+        buffer.pop();
+        println!("{:x?}", buffer);
+        println!("{:?}", std::str::from_utf8(&buffer));
+        std::thread::sleep(Duration::from_millis(100));
+        buffer.clear();
+
+        /* 
+        serial_port.get_mut().write("?\r".as_bytes());
+        serial_port.read(&mut buffer);
+        println!("{:x?}", buffer);
+        println!("{:?}", std::str::from_utf8(&buffer));
+        std::thread::sleep(Duration::from_millis(100));
+        */
+    }
+}
+*/
