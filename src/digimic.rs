@@ -180,26 +180,6 @@ impl DigimicApp {
                 self.send_command(format!("RST"));
             }
 
-            egui::Grid::new("some_unique_id").show(ui, |ui| {
-                StripBuilder::new(ui)
-                    .size(Size::exact(50.0))
-                    .size(Size::remainder())
-                    .size(Size::relative(0.5).at_least(60.0))
-                    .size(Size::exact(10.5)).vertical(|mut strip| {
-                        strip.cell(|ui| {
-                            ui.painter().rect_filled(
-                                ui.available_rect_before_wrap(),
-                                0.0,
-                                Color32::BLUE,
-                            );
-                            ui.button("thing1");
-                            ui.button("thing2");
-                        });
-
-                     });
-                
-                ui.end_row();
-            ;
             });
 
         });
