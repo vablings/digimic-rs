@@ -1,16 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use chrono::prelude::*;
-use crossbeam_channel::{Sender, Receiver};
+use crossbeam_channel::{Receiver, Sender};
 use eframe::{egui, glow::FALSE};
-use serialport::{SerialPort, SerialPortInfo, SerialPortType, UsbPortInfo, COMPort};
-use std::time::Duration;
-use std::{
-    thread,
-};
-use std::io::{Write, BufReader, BufRead};
-use winput::{Vk, Button};
+use serialport::{COMPort, SerialPort, SerialPortInfo, SerialPortType, UsbPortInfo};
+use std::io::{BufRead, BufReader, Write};
 use std::str;
+use std::thread;
+use std::time::Duration;
+use winput::{Button, Vk};
 
 mod digimic;
 mod egui_log;
@@ -22,6 +20,7 @@ pub enum Commands {
     CurrentReading(f64),
     ContinuousToggle(bool),
     SerialNumber(i64),
+    MicrometerType(digimic::MicrometerSize),
 }
 
 fn main() -> Result<(), eframe::Error> {
@@ -37,12 +36,11 @@ fn main() -> Result<(), eframe::Error> {
         .unwrap()
         .into_iter()
         .find(|port| match &port.port_type {
-            SerialPortType::UsbPort(info) => info.product.as_ref().map_or(false, |p| p.contains("CH340")),
+            SerialPortType::UsbPort(info) => {
+                info.product.as_ref().map_or(false, |p| p.contains("CH340"))
+            }
             _ => false,
         });
-
-    
-
 
     let (gui_sender, serial_recv) = crossbeam_channel::unbounded::<Commands>();
     let (serial_sender, gui_recv) = crossbeam_channel::unbounded::<Commands>();
@@ -50,13 +48,14 @@ fn main() -> Result<(), eframe::Error> {
     let mut serial_port = serialport::new(ch340.unwrap().port_name, 4800)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Seven)
-        .parity(serialport::Parity::Even).timeout(Duration::from_millis(5))
-        .open().unwrap();
+        .parity(serialport::Parity::Even)
+        .timeout(Duration::from_millis(5))
+        .open()
+        .unwrap();
 
     let mut serial_thread = SerialThread::new(serial_port, serial_sender, serial_recv);
-        
-    thread::spawn(move || serial_thread.start() );
 
+    thread::spawn(move || serial_thread.start());
 
     eframe::run_native(
         "Digimic-rs Console/Configurator",
@@ -68,7 +67,6 @@ fn main() -> Result<(), eframe::Error> {
     )
 }
 
-
 struct SerialThread {
     serial_port: Box<dyn SerialPort>,
     serial_sender: Sender<Commands>,
@@ -77,7 +75,11 @@ struct SerialThread {
 }
 
 impl SerialThread {
-    pub fn new(serial_port: Box<dyn SerialPort>, serial_sender: Sender<Commands>, serial_recv: Receiver<Commands>) -> Self {
+    pub fn new(
+        serial_port: Box<dyn SerialPort>,
+        serial_sender: Sender<Commands>,
+        serial_recv: Receiver<Commands>,
+    ) -> Self {
         Self {
             serial_port,
             serial_recv,
@@ -85,56 +87,74 @@ impl SerialThread {
             continuous_mode: false,
         }
     }
+
     pub fn start(&mut self) {
+        let cloned_port = self.serial_port.try_clone().unwrap();
+        let sender = self.serial_sender.clone();
+        thread::spawn(|| serial_port_to_logger(cloned_port, sender));
+
         loop {
+            //command handling loop i guess
             match self.serial_recv.try_recv() {
                 Ok(Commands::SendCommand(command)) => {
                     let command = command + "\r";
                     self.serial_port.write(command.as_bytes());
-                },
-                Ok(Commands::ContinuousToggle(T)) => {
-                    self.continuous_mode = T;
                 }
-                _ => {
-                },
+                _ => (),
             }
-
-            let mut buffer = [0; 100];
-
-            if self.continuous_mode {
-                self.serial_port.write("\r".as_bytes());
-            }
-
-            match self.serial_port.read(&mut buffer[..]) {
-                Ok(_) => match str::from_utf8(&buffer) {
-                    Ok(string) => {
-
-                        //self.serial_sender.send(Commands::SerialNumber(serial_number));
-                        
-                        if let Ok(size) = string[1..8].parse::<f64>() {
-                            self.serial_sender.send(Commands::CurrentReading(size));
-                            if !self.continuous_mode {
-                                size.to_string().chars().into_iter().for_each(|char| {
-                                    winput::send(char);
-                                });
-                                winput::send(Vk::Enter);
-                            }
-                        } else {
-                            if !string.contains("ERR") {
-                                log::info!("{}", string);
-                            } 
-                        }
-                    },
-                    Err(_) => (),
-                }
-                Err(_) => (),
-            } 
         }
-
     }
 }
 
+fn serial_port_to_logger(serial_port: Box<dyn SerialPort>, serial_sender: Sender<Commands>) {
+    let mut reader = BufReader::new(serial_port);
+    loop {
+        reader.get_mut().write("?\r".as_bytes());
+        reader.get_mut().flush();
+
+        let mut buffer = Vec::new();
+        reader.read_until(b'd', &mut buffer);
+        buffer.pop();
+
+        if let Ok(string) = std::str::from_utf8(&*buffer) {
+            if string.contains("HCT") {
+                if let Some(reading) = string.get(6..9) {
+                    let mic_type = match reading {
+                        "025" => Commands::MicrometerType(digimic::MicrometerSize::Range0to25),
+                        "050" => Commands::MicrometerType(digimic::MicrometerSize::Range25to50),
+                        "075" => Commands::MicrometerType(digimic::MicrometerSize::Range50to75),
+                        "100" => Commands::MicrometerType(digimic::MicrometerSize::Range75to100),
+                        _ => Commands::MicrometerType(digimic::MicrometerSize::Range0to25),
+                    };
+                    
+                    serial_sender.send(mic_type);
+                }
+            }
+
+            if string.contains("SN") {
+                if let Some(reading) = string.get(2..string.len()).and_then(|sn| sn.parse::<i64>().ok()) {
+                    serial_sender.send(Commands::SerialNumber(reading));
+                }
+            }
+            if let Some(reading) = string
+                .get(1..8)
+                .and_then(|floaty| floaty.parse::<f64>().ok())
+            {
+                serial_sender.send(Commands::CurrentReading(reading));
+            } else {
+                if !string.is_empty() {
+                    log::info!("{string}");
+                }
+            }
+            
+        }
+
+        std::thread::sleep(Duration::from_millis(50));
+    }
+}
 /*
+
+
 
 use serialport;
 use serialport::SerialPortType;
@@ -161,7 +181,7 @@ fn main() {
         .open()
         .unwrap();
 
-    let mut reader = BufReader::new(serial_port);   
+    let mut reader = BufReader::new(serial_port);
 
     loop {
         reader.get_mut().write("?\r".as_bytes());
@@ -175,7 +195,7 @@ fn main() {
         std::thread::sleep(Duration::from_millis(100));
         buffer.clear();
 
-        /* 
+        /*
         serial_port.get_mut().write("?\r".as_bytes());
         serial_port.read(&mut buffer);
         println!("{:x?}", buffer);

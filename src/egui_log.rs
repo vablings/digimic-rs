@@ -127,7 +127,8 @@ impl LoggerUi {
                                 }
                                 _ => ui.label(format!("{}", level)),
                             };
-                            ui.colored_label(Color32::WHITE, format!(" {}", string));
+                            //ui.colored_label(Color32::WHITE, format!(" {}", string));
+                            ui.monospace(format!(" {}", string));
                         });
 
                         logs_displayed += 1;

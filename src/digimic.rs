@@ -1,13 +1,11 @@
-use std::thread::current;
-
-use chrono::Local;
-use color_eyre::owo_colors::OwoColorize;
 use crossbeam_channel::{Receiver, Sender};
+use egui::Color32;
+use egui_extras::{StripBuilder, Size};
 
 use crate::{egui_log, Commands};
 
-#[derive(PartialEq)]
-enum MicrometerSize {
+#[derive(PartialEq, Debug)]
+pub enum MicrometerSize {
     Range0to25,
     Range25to50,
     Range50to75,
@@ -24,7 +22,7 @@ impl MicrometerSize {
     }
 }
 pub struct DigimicApp {
-    gui_sender: Sender<Commands>, 
+    gui_sender: Sender<Commands>,
     gui_recv: Receiver<Commands>,
     console_input: String,
     serial_number: String,
@@ -58,7 +56,6 @@ impl DigimicApp {
                     self.send_command(self.console_input.clone());
                     self.console_input.clear();
                 }
-                //ctx.set_debug_on_hover(true);
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::TOP), |ui| {
                     ui.horizontal(|ui| {
                         ui.add(
@@ -89,7 +86,6 @@ impl DigimicApp {
 
             ui.horizontal(|ui| { 
                 ui.heading(format!("{:0>7.4}",self.last_reading));
-                ui.checkbox(&mut self.stream_mode, "CI Output").on_hover_text_at_pointer("Continually updates the value displayed. During this mode the DATA key will not output the value to an external program \n WARNING: Experimental Featuree")
             });
 
             let response = ui.add(
@@ -180,6 +176,32 @@ impl DigimicApp {
                 }
             });
 
+            if ui.button("Reset").clicked() {
+                self.send_command(format!("RST"));
+            }
+
+            egui::Grid::new("some_unique_id").show(ui, |ui| {
+                StripBuilder::new(ui)
+                    .size(Size::exact(50.0))
+                    .size(Size::remainder())
+                    .size(Size::relative(0.5).at_least(60.0))
+                    .size(Size::exact(10.5)).vertical(|mut strip| {
+                        strip.cell(|ui| {
+                            ui.painter().rect_filled(
+                                ui.available_rect_before_wrap(),
+                                0.0,
+                                Color32::BLUE,
+                            );
+                            ui.button("thing1");
+                            ui.button("thing2");
+                        });
+
+                     });
+                
+                ui.end_row();
+            ;
+            });
+
         });
     }
 
@@ -193,14 +215,23 @@ impl DigimicApp {
 
 impl eframe::App for DigimicApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.gui_sender.send(Commands::ContinuousToggle(self.stream_mode));
-        if let Ok(serial_send_me_a_job) = self.gui_recv.try_recv(){
+        self.gui_sender
+            .send(Commands::ContinuousToggle(self.stream_mode));
+        if let Ok(serial_send_me_a_job) = self.gui_recv.try_recv() {
             match serial_send_me_a_job {
                 Commands::CurrentReading(reading) => self.last_reading = reading,
-                Commands::SerialNumber(serial_number) => self.serial_number = serial_number.to_string(),
-                _ => ()
+                Commands::SerialNumber(serial_number) => {
+                    self.serial_number = serial_number.to_string()
+                }
+                Commands::MicrometerType(mic_type) => {
+                    self.micrometer_size = mic_type;
+                }
+                _ => (),
             }
         }
+
+
+
 
         ctx.request_repaint();
         self.side_panel_left(ctx);
