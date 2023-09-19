@@ -180,7 +180,6 @@ impl DigimicApp {
                 self.send_command(format!("RST"));
             }
 
-            });
 
         });
     }
