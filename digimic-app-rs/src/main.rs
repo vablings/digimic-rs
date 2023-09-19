@@ -1,14 +1,14 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use chrono::prelude::*;
+
 use crossbeam_channel::{Receiver, Sender};
-use eframe::{egui, glow::FALSE};
-use serialport::{COMPort, SerialPort, SerialPortInfo, SerialPortType, UsbPortInfo};
+use eframe::{egui};
+use serialport::{SerialPort, SerialPortType};
 use std::io::{BufRead, BufReader, Write};
-use std::str;
+
 use std::thread;
 use std::time::Duration;
-use winput::{Button, Vk};
+
 
 mod digimic;
 mod egui_log;
@@ -45,7 +45,7 @@ fn main() -> Result<(), eframe::Error> {
     let (gui_sender, serial_recv) = crossbeam_channel::unbounded::<Commands>();
     let (serial_sender, gui_recv) = crossbeam_channel::unbounded::<Commands>();
 
-    let mut serial_port = serialport::new(ch340.unwrap().port_name, 4800)
+    let serial_port = serialport::new(ch340.unwrap().port_name, 4800)
         .stop_bits(serialport::StopBits::One)
         .data_bits(serialport::DataBits::Seven)
         .parity(serialport::Parity::Even)
