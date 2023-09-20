@@ -1,9 +1,9 @@
 use serialport::SerialPort;
 use serialport::SerialPortType;
 use std::io::{BufRead, BufReader};
-use std::str::FromStr;
+
 use std::{error::Error, time::Duration};
-mod command;
+mod data;
 
 
 struct Digimic {
@@ -38,8 +38,8 @@ impl Digimic {
         loop {
             reader.read_until(b'd', &mut buffer).unwrap();
             buffer.pop();
-            let parsed_command = command::Micrometer::from_str(std::str::from_utf8(& *buffer).unwrap()).unwrap();
-            println!("{:?}", parsed_command);
+            //let parsed_command = data::Micrometer::from_str(std::str::from_utf8(& *buffer).unwrap()).unwrap();
+            //println!("{:?}", parsed_command);
         }
     }
 }
