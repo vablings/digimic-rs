@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc, NaiveDate};
-use logos::Logos;
+use logos::{Logos, Lexer};
 use std::{num::ParseIntError, str::FromStr, string::ParseError};
 
 
@@ -18,6 +18,10 @@ pub enum Micrometer {
     REF,
 }
 
+fn sn(lex: &mut Lexer<CommandKind>) -> Option<i64> {
+    println!("{:?}", lex);
+    Some(1)
+}
 
 
 //todo; lexer can take command in args of token/regex so can be reformatted to use singular enum
@@ -25,8 +29,8 @@ pub enum Micrometer {
 enum CommandKind {
     #[token("REF!")]
     Ref,
-    #[token("SN")]
-    Sn,
+    #[token("SN", sn)]
+    SN(i64),
     #[token("LIN")]
     Lin,
     #[regex(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}")]
@@ -50,7 +54,8 @@ impl FromStr for Micrometer {
         let remainder = lexer.remainder();
         Ok(match kind {
             Ok(CommandKind::Ref) => Micrometer::REF,
-            Ok(CommandKind::Sn) => Micrometer::SN(remainder.parse::<i64>()?),
+            Ok(CommandKind::SN(T)) => Micrometer::SN(T),
+            //Ok(CommandKind::Sn) => Micrometer::SN(remainder.parse::<i64>()?),
             Ok(CommandKind::Lin) => Micrometer::LIN(
                 remainder
                     .chars()
@@ -78,62 +83,62 @@ impl FromStr for Micrometer {
 mod tests {
     use std::{str::FromStr};
     use chrono::NaiveDate;
-    use crate::{command::{self, Micrometer}};
+    use crate::{data::{self, Micrometer}};
 
     #[test]
     fn test_parse_sn() {
-        let command = command::Micrometer::from_str("SN123456");
+        let command = data::Micrometer::from_str("SN123456");
         assert_eq!(command.unwrap(), Micrometer::SN(123456));
     }
     #[test]
     fn test_parse_lin() {
-        let command = command::Micrometer::from_str("LIN +033");
+        let command = data::Micrometer::from_str("LIN +033");
         assert_eq!(command.unwrap(), Micrometer::LIN(33));
     }
     #[test]
     fn test_parse_lcal() {
         let from_ymd_opt = NaiveDate::from_ymd_opt;
-        let command = command::Micrometer::from_str("08.09.2023");
+        let command = data::Micrometer::from_str("08.09.2023");
         assert_eq!(command.unwrap(), Micrometer::LCAL(from_ymd_opt(2023, 9, 8).unwrap()));
     }
 
     #[test]
     fn test_parse_mic_reading() {
-        let command = command::Micrometer::from_str("+000.001");
+        let command = data::Micrometer::from_str("+000.001");
         assert_eq!(command.unwrap(), Micrometer::QUERY(0.001));
 
-        let command = command::Micrometer::from_str("-000.001");
+        let command = data::Micrometer::from_str("-000.001");
         assert_eq!(command.unwrap(), Micrometer::QUERY(-0.001));
     }
 
     #[test]
     fn test_bad_reading() {
-        let command = command::Micrometer::from_str("WG23TG23GE");
+        let command = data::Micrometer::from_str("WG23TG23GE");
         assert_eq!(command.unwrap(), Micrometer::UnknownCommand("WG23TG23GE".to_string()));
     }
 
     
     #[test]
     fn test_parse_verx() {
-        let command = command::Micrometer::from_str("1.03.1046H");
+        let command = data::Micrometer::from_str("1.03.1046H");
         assert_eq!(command.unwrap(), Micrometer::VERX("1.03.1046H".to_string()));
     }
 
     #[test]
     fn test_parse_btdn() {
-        let command = command::Micrometer::from_str("HCT-MM025-1234567");
+        let command = data::Micrometer::from_str("HCT-MM025-1234567");
         assert_eq!(command.unwrap(), Micrometer::BTDN("HCT-MM025-1234567".to_string()));
     }
 
     #[test]
     fn test_parse_ref() {
-        let command = command::Micrometer::from_str("REF!");
+        let command = data::Micrometer::from_str("REF!");
         assert_eq!(command.unwrap(), Micrometer::REF);
     }
 
     #[test]
     fn test_parse_err() {
-        let command = command::Micrometer::from_str("ERR2");
+        let command = data::Micrometer::from_str("ERR2");
         assert_eq!(command.unwrap(), Micrometer::ERR(2));
     }
 
