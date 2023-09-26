@@ -1,0 +1,23 @@
+
+
+- SPI -> DBG ON/OFF
+- MAC? -> //Returns device mac address
+- KEY? -> KEY1
+- CALK / CALK1 / CALK0 //Typing this will display -Cal- on the screen and freeze the device?
+- MEN? -> MEN02F0000E //possibly a ptr?
+- TST -> //Cycles thought various test menus such as showing full display illuminated
+- IN/MM -> //Changes the device between imperial and metric measurement
+- MCUID -> MSP6726 // Returns the microcontroller uid
+- VBAT -> VBAT 3179 // Gives the battery voltage in format 0.000v
+- BLI <on/off> // toggles the screen blinking function
+- CFGBT? -> CFG BT SIMPLE //prints out the current bluetooth mode
+- OUT <on/off> //toggles continous output mode
+- TMP? -> TMP +091.70 //No idea what this does
+- ID -> SY 306 // Shows the device id
+- LCAL -> 00.00.2000 // Last calibrated date i would assume
+- NCAL -> 00.00.2000 // Next calibration date i would also assume.
+- DIS // Just seems to turn the segment display off
+- OUTR? -> OUTR 0050
+- SBY //Sends the unit into standby mode
+- UNION -> UNION
+- CAL <on/off> // Enter calibration mode, gives you an extra dp
