@@ -3,7 +3,9 @@ use serialport::SerialPortType;
 use std::io::{BufRead, BufReader};
 use std::str::FromStr;
 use std::{error::Error, time::Duration};
-mod command;
+
+
+mod data;
 
 
 struct Digimic {
@@ -30,17 +32,6 @@ impl Digimic {
         Ok(Digimic {
             serial_port: serial_port,
         })
-    }
-
-    fn start(&mut self) {
-        let mut reader = BufReader::new(self.serial_port.try_clone().unwrap());
-        let mut buffer = Vec::new();
-        loop {
-            reader.read_until(b'd', &mut buffer).unwrap();
-            buffer.pop();
-            let parsed_command = command::Micrometer::from_str(std::str::from_utf8(& *buffer).unwrap()).unwrap();
-            println!("{:?}", parsed_command);
-        }
     }
 }
 
