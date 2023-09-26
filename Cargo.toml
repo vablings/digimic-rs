@@ -4,3 +4,4 @@ members = [
     "digimic-comm-rs",
     "digimic-app-rs",
 ]
+resolver = "2"

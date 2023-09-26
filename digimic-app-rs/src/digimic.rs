@@ -202,9 +202,6 @@ impl eframe::App for DigimicApp {
                 Commands::SerialNumber(serial_number) => {
                     self.serial_number = serial_number.to_string()
                 }
-                Commands::MicrometerType(mic_type) => {
-                    self.micrometer_size = mic_type;
-                }
                 _ => (),
             }
         }

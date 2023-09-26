@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 chrono = "0.4.31"
+crossbeam-channel = "0.5.8"
 logos = "0.13.0"
 serialport = "4.2.2"
-tokio-serial = "5.4.4"
+log = "0.4.20"

@@ -1,7 +1,7 @@
-use chrono::{NaiveDate};
+use chrono::NaiveDate;
 use logos::{Logos, Lexer};
-use std::{str::FromStr};
-
+use std::str::FromStr;
+use std::fmt;
 
 
 fn query(lex: &mut Lexer<CommandKind>) -> Option<f64> {
@@ -10,8 +10,8 @@ fn query(lex: &mut Lexer<CommandKind>) -> Option<f64> {
 fn lcal(lex: &mut Lexer<CommandKind>) -> Option<NaiveDate> {
     Some(NaiveDate::parse_from_str(lex.source(), "%d.%m.%Y").ok()?)
 }
-fn sn(lex: &mut Lexer<CommandKind>) -> Option<i64> {
-    Some(lex.remainder().parse::<i64>().ok()?)
+fn sn(lex: &mut Lexer<CommandKind>) -> Option<u64> {
+    Some(lex.remainder().parse::<u64>().ok()?)
 }
 fn lin(lex: &mut Lexer<CommandKind>) -> Option<i64> {
     Some(lex.remainder().chars().filter(|c| c.is_digit(10)).collect::<String>().parse::<i64>().ok()?)
@@ -23,11 +23,11 @@ fn err(lex: &mut Lexer<CommandKind>) -> Option<i64> {
 
 //todo; lexer can take command in args of token/regex so can be reformatted to use singular enum
 #[derive(Logos, PartialEq, PartialOrd, Debug)]
-enum CommandKind {
+pub enum CommandKind {
     #[token("REF!")]
     REF, // REF!
     #[token("SN", sn)]
-    SN(i64), // SN? -> FACCFGSN(XXXXXX)
+    SN(u64), // SN? -> FACCFGSN(XXXXXX)
     #[token("LIN", lin)]
     LIN(i64),   //LIN ? 
     #[regex(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}", lcal)]
@@ -45,9 +45,26 @@ enum CommandKind {
 
 
 
+impl fmt::Display for CommandKind {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CommandKind::REF => write!(f, "REF!"),
+            CommandKind::SN(serial_number) => write!(f, "SN{serial_number}"),
+            CommandKind::LIN(lin_correction) => write!(f, "LIN{lin_correction}"),
+            CommandKind::LCAL(last_calibrated) => write!(f, "LCAL:{last_calibrated}"),
+            CommandKind::QUERY(meas) => write!(f, "{meas}"),
+            CommandKind::VERX(version_string) => write!(f, "VERX: {version_string}"),
+            CommandKind::BTDN(btdn_string) => write!(f, "BTDN: {btdn_string}"),
+            CommandKind::ERR(error_index) => write!(f, "ERR{error_index}"),
+            CommandKind::UnknownCommand(command) => write!(f, "Unknown command: {command}"),
+        }
+    }
+}
+
+
+
 impl FromStr for CommandKind {
     type Err = anyhow::Error;
-
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut lexer = CommandKind::lexer(s);
         let kind = lexer.next().unwrap().unwrap_or(CommandKind::UnknownCommand(format!("{s}"))); //next here returns an option of a result
