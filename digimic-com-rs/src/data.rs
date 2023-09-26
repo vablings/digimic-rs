@@ -1,17 +1,33 @@
+<<<<<<< HEAD:digimic-comm-rs/src/data.rs
 use chrono::NaiveDate;
 use logos::{Logos, Lexer};
 use std::str::FromStr;
 use std::fmt;
 
+=======
+use chrono::{NaiveDate};
+use logos::{Logos, Lexer};
+use std::{str::FromStr};
+>>>>>>> 8165d942b827ce1c321891ec0636189a3613783c:digimic-com-rs/src/data.rs
 
 fn query(lex: &mut Lexer<CommandKind>) -> Option<f64> {
     Some(lex.source().get(0..lex.source().len()).unwrap_or("0.0").parse::<f64>().ok()?)
 }
+<<<<<<< HEAD:digimic-comm-rs/src/data.rs
 fn lcal(lex: &mut Lexer<CommandKind>) -> Option<NaiveDate> {
     Some(NaiveDate::parse_from_str(lex.source(), "%d.%m.%Y").ok()?)
 }
 fn sn(lex: &mut Lexer<CommandKind>) -> Option<u64> {
     Some(lex.remainder().parse::<u64>().ok()?)
+=======
+
+fn lcal(lex: &mut Lexer<CommandKind>) -> Option<NaiveDate> {
+    Some(NaiveDate::parse_from_str(lex.source(), "%d.%m.%Y").ok()?)
+}
+
+fn sn(lex: &mut Lexer<CommandKind>) -> Option<i64> {
+    Some(lex.remainder().parse::<i64>().ok()?)
+>>>>>>> 8165d942b827ce1c321891ec0636189a3613783c:digimic-com-rs/src/data.rs
 }
 fn lin(lex: &mut Lexer<CommandKind>) -> Option<i64> {
     Some(lex.remainder().chars().filter(|c| c.is_digit(10)).collect::<String>().parse::<i64>().ok()?)
@@ -23,11 +39,19 @@ fn err(lex: &mut Lexer<CommandKind>) -> Option<i64> {
 
 //todo; lexer can take command in args of token/regex so can be reformatted to use singular enum
 #[derive(Logos, PartialEq, PartialOrd, Debug)]
+<<<<<<< HEAD:digimic-comm-rs/src/data.rs
 pub enum CommandKind {
     #[token("REF!")]
     REF, // REF!
     #[token("SN", sn)]
     SN(u64), // SN? -> FACCFGSN(XXXXXX)
+=======
+enum CommandKind {
+    #[token("REF!")]
+    REF, // REF!
+    #[token("SN", sn)]
+    SN(i64), // SN? -> FACCFGSN(XXXXXX)
+>>>>>>> 8165d942b827ce1c321891ec0636189a3613783c:digimic-com-rs/src/data.rs
     #[token("LIN", lin)]
     LIN(i64),   //LIN ? 
     #[regex(r"[0-9]{2}\.[0-9]{2}\.[0-9]{4}", lcal)]
@@ -45,6 +69,7 @@ pub enum CommandKind {
 
 
 
+<<<<<<< HEAD:digimic-comm-rs/src/data.rs
 impl fmt::Display for CommandKind {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -65,6 +90,11 @@ impl fmt::Display for CommandKind {
 
 impl FromStr for CommandKind {
     type Err = anyhow::Error;
+=======
+impl FromStr for CommandKind {
+    type Err = anyhow::Error;
+
+>>>>>>> 8165d942b827ce1c321891ec0636189a3613783c:digimic-com-rs/src/data.rs
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut lexer = CommandKind::lexer(s);
         let kind = lexer.next().unwrap().unwrap_or(CommandKind::UnknownCommand(format!("{s}"))); //next here returns an option of a result
@@ -137,4 +167,8 @@ mod tests {
     }
 
 
+<<<<<<< HEAD:digimic-comm-rs/src/data.rs
 }
+=======
+}
+>>>>>>> 8165d942b827ce1c321891ec0636189a3613783c:digimic-com-rs/src/data.rs
