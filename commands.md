@@ -19,5 +19,5 @@
 - DIS // Just seems to turn the segment display off
 - OUTR? -> OUTR 0050
 - SBY //Sends the unit into standby mode
-- UNION -> UNION
+- UNI <off/on> //unsure 
 - CAL <on/off> // Enter calibration mode, gives you an extra dp
